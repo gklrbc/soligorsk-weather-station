@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Данные · Солигорск{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Данные</h1>
+    <p class="page-sub">Последние {{ records|length }} записей · новое сверху</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-ghost" href="/admin/export/csv" title="Выгрузка последних 7 дней"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg>CSV · 7 дней</a>
+    <a class="btn btn-ghost" href="/admin/export/xlsx" title="Выгрузка последних 7 дней"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg>XLSX · 7 дней</a>
+  </div>
+</div>
+
+<section class="card" id="insert">
+  <div class="card-head">
+    <h2><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Ручная вставка записи</h2>
+    <span class="hint">температура и влажность — обязательны</span>
+  </div>
+  <form method="post" action="/admin/data/insert" class="field-row">
+    <label class="field">Температура, °C
+      <input type="number" name="t" step="any" required placeholder="21.4">
+    </label>
+    <label class="field">Влажность, %
+      <input type="number" name="h" step="any" min="0" max="100" required placeholder="64">
+    </label>
+    <label class="field">Давление, мм рт. ст.
+      <input type="text" name="p" inputmode="decimal" placeholder="746 (можно пусто)">
+    </label>
+    <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Добавить</button>
+  </form>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2><svg class="icon" aria-hidden="true"><use href="#i-db"/></svg>Записи измерений</h2>
+  </div>
+  <div class="table-controls">
+    <div class="chips" data-chips-for="data-tbody" role="group" aria-label="Фильтр по метке">
+      <button type="button" class="fchip active" data-cat="all">Все</button>
+      <button type="button" class="fchip" data-cat="ok">Без брака</button>
+      <button type="button" class="fchip" data-cat="bad">Только брак</button>
+    </div>
+    <div class="table-tools">
+      <span class="search-wrap">
+        <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+        <input type="search" class="filter-input" data-filter-for="data-tbody" placeholder="Поиск: дата, температура…" aria-label="Фильтр по подстроке">
+      </span>
+      <span class="filter-count" data-filter-count="data-tbody"></span>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table class="table sortable">
+      <thead>
+        <tr>
+          <th scope="col" data-sort="num" class="num">#</th>
+          <th scope="col" data-sort="text">Время</th>
+          <th scope="col" data-sort="num" class="num">t, °C</th>
+          <th scope="col" data-sort="num" class="num">Влажность, %</th>
+          <th scope="col" data-sort="num" class="num">Давление, мм</th>
+          <th scope="col" class="th-actions"><span class="visually-hidden">Действия</span></th>
+        </tr>
+      </thead>
+      <tbody id="data-tbody">
+        {% for r in records %}
+        <tr data-cat="{{ 'bad' if r.bad else 'ok' }}"{% if r.bad %} data-bad="1"{% endif %}>
+          <td class="mono num">{{ r.id }}</td>
+          <td class="mono">{{ r.ts }}{% if r.bad %} <span class="badge badge-danger" title="Запись помечена как брак умершего датчика">брак</span>{% endif %}</td>
+          <td class="num">{{ '%.1f'|format(r.t) }}</td>
+          <td class="num">{{ '%.1f'|format(r.h) }}</td>
+          <td class="mono{% if r.p == '—' %} dash{% endif %}">{{ r.p }}</td>
+          <td class="td-actions no-filter">
+            <form method="post" action="/admin/data/delete" class="inline-form" data-confirm="Удалить запись #{{ r.id }} ({{ r.ts }})? Это действие необратимо.">
+              <input type="hidden" name="id" value="{{ r.id }}">
+              <button type="submit" class="btn btn-sm btn-danger-ghost" title="Удалить запись {{ r.id }}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg><span class="btn-label">Удалить</span></button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr class="empty-row"><td colspan="6">Записей пока нет.</td></tr>
+        {% endfor %}
+        <tr class="filter-empty" hidden><td colspan="6" class="empty-cell">Ничего не найдено — измените поиск или фильтр.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="hint">Красной подсветкой отмечен брак умершего датчика; <span class="t-max">тёплое</span> и <span class="t-min">холодное</span> — максимум и минимум среди видимых строк. Клик по заголовку — сортировка.</p>
+</section>
+{% endblock %}

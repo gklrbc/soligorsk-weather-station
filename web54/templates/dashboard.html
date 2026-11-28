@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Панель · Солигорск{% endblock %}
+
+{% macro tval(v) %}{% if v is none %}<span class="dash">—</span>{% else %}{{ '%.1f'|format(v) }}<span class="unit"> °C</span>{% endif %}{% endmacro %}
+{% macro cval(v) %}{% if v is none %}<span class="dash">—</span>{% else %}{{ v }}{% endif %}{% endmacro %}
+{% macro trend(v, unit) %}
+  {%- set cls = 'flat' if v is not defined or v is none or v == 0 else ('up' if v > 0 else 'down') -%}
+  <div class="stat-value stat-trend {{ cls }}">
+    {%- if v is defined and v is not none %}{{ '%+.1f'|format(v) }}<span class="unit"> {{ unit }}</span>{% else %}<span class="dash">—</span>{% endif -%}
+  </div>
+{% endmacro %}
+
+{% block content %}
+{% if test_mode %}
+<div class="banner" role="status">
+  <svg class="icon" aria-hidden="true"><use href="#i-warn"/></svg>
+  <div>Бот в тестовом режиме — реальные сообщения пользователям не отправляются. Переключение — кнопка «Тест-режим» в шапке.</div>
+</div>
+{% endif %}
+
+<div class="page-head">
+  <div>
+    <h1>Панель</h1>
+    <p class="page-sub">Последний замер: <span class="mono">{{ last_ts }}</span>{% if not station_online %} · <span class="warn-text">станция не на связи</span>{% endif %}</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-ghost" href="/admin/export/csv" title="Выгрузка последних 7 дней"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg>CSV · 7 дней</a>
+    <a class="btn btn-ghost" href="/admin/export/xlsx" title="Выгрузка последних 7 дней"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg>XLSX · 7 дней</a>
+  </div>
+</div>
+
+<section class="stats-grid" aria-label="Показатели">
+  <div class="stat">
+    <div class="stat-label">Всего записей</div>
+    <div class="stat-value">{{ total }}</div>
+    <div class="stat-sub">в базе данных</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">За 24 часа</div>
+    <div class="stat-value">{{ sensor_24h }}</div>
+    <div class="stat-sub">новых замеров</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Размер БД</div>
+    <div class="stat-value">{{ '%.2f'|format(db_size_mb) }}<span class="unit"> МБ</span></div>
+    <div class="stat-sub">файл базы</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Пользователи бота</div>
+    <div class="stat-value">{{ users_total }}</div>
+    <div class="stat-sub">{% if users_blocked %}заблокировано: {{ users_blocked }}{% else %}никого не заблокировано{% endif %}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Активность</div>
+    <div class="stat-value">{{ active_1h }}</div>
+    <div class="stat-sub">человек за последний час</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Отказы /update</div>
+    <div class="stat-value">{{ rejects_24h }}</div>
+    <div class="stat-sub">за последние 24 часа</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">T за час</div>
+    {{ trend(t_delta_1h, '°C') }}
+    <div class="stat-sub">тренд температуры</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Давление за 3 ч</div>
+    {{ trend(p_delta_3h, 'мм') }}
+    <div class="stat-sub">тренд давления</div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2><svg class="icon" aria-hidden="true"><use href="#i-dash"/></svg>Сводка температуры</h2>
+    <span class="hint">по данным станции</span>
+  </div>
+  <div class="table-wrap table-wrap-flush">
+    <table class="table summary-table">
+      <thead>
+        <tr>
+          <th scope="col">Показатель</th>
+          <th scope="col" class="num">24 часа</th>
+          <th scope="col" class="num">7 дней</th>
+          <th scope="col" class="num">30 дней</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Минимум</td><td class="num">{{ tval(s24[0]) }}</td><td class="num">{{ tval(s7[0]) }}</td><td class="num">{{ tval(s30[0]) }}</td></tr>
+        <tr><td>Средняя</td><td class="num">{{ tval(s24[2]) }}</td><td class="num">{{ tval(s7[2]) }}</td><td class="num">{{ tval(s30[2]) }}</td></tr>
+        <tr><td>Максимум</td><td class="num">{{ tval(s24[1]) }}</td><td class="num">{{ tval(s7[1]) }}</td><td class="num">{{ tval(s30[1]) }}</td></tr>
+        <tr><td>Замеров</td><td class="num">{{ cval(s24[3]) }}</td><td class="num">{{ cval(s7[3]) }}</td><td class="num">{{ cval(s30[3]) }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card" id="charts" data-demo="{{ '1' if chart_demo else '0' }}">
+  <div class="card-head">
+    <h2><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>Графики</h2>
+    <div class="charts-controls">
+      <a class="btn btn-sm {{ 'btn-test-on' if chart_demo else 'btn-ghost' }}" href="{{ '?' if chart_demo else '?demo=1' }}"
+         data-confirm="{{ 'Вернуть реальные графики?' if chart_demo else 'Переключить графики на тестовые (синтетические) данные?' }}">
+        <svg class="icon" aria-hidden="true"><use href="#i-flask"/></svg>
+        <span class="btn-label"><span class="hide-sm">Графики: </span>{{ 'тест' if chart_demo else 'реальные' }}</span>
+      </a>
+      {% if source_om is defined %}
+      <form method="post" action="/admin/sourcetoggle" class="inline-form"
+            data-confirm="Переключить источник данных: {{ 'Open-Meteo → станция' if source_om else 'станция → Open-Meteo' }}? Повлияет и на графики, и на ответы бота.">
+        <button type="submit" class="btn btn-sm {{ 'btn-test-on' if source_om else 'btn-ghost' }}" title="Данные графиков и бота">
+          <svg class="icon" aria-hidden="true"><use href="#i-db"/></svg>
+          <span class="btn-label">Данные: {{ 'Open-Meteo' if source_om else 'станция' }}</span>
+        </button>
+      </form>
+      {% endif %}
+      <span class="charts-updated" id="charts-updated">—</span>
+      <button type="button" class="btn btn-sm btn-ghost" id="charts-refresh" title="Обновить графики сейчас">
+        <svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>
+        <span class="btn-label">Обновить · <span id="charts-countdown">60</span> с</span>
+      </button>
+    </div>
+  </div>
+  {% if chart_demo %}<p class="hint warn-text">Показаны синтетические тестовые данные.</p>{% endif %}
+  <p class="hint">Клик по графику открывает его на весь экран.</p>
+  <div class="charts-grid">
+    <figure class="chart">
+      <figcaption>24 часа</figcaption>
+      <img class="chart-img" data-mode="24h" src="/admin/chart/24h?v={{ bust }}{% if chart_demo %}&amp;demo=1{% endif %}" alt="График измерений за последние 24 часа">
+    </figure>
+    <figure class="chart">
+      <figcaption>Прогноз 24ч</figcaption>
+      <img class="chart-img" data-mode="forecast" src="/admin/chart/forecast?v={{ bust }}{% if chart_demo %}&amp;demo=1{% endif %}" alt="Прогноз температуры на следующие 24 часа (Open-Meteo)">
+    </figure>
+    <figure class="chart">
+      <figcaption>7 дней</figcaption>
+      <img class="chart-img" data-mode="7d" src="/admin/chart/7d?v={{ bust }}{% if chart_demo %}&amp;demo=1{% endif %}" alt="График измерений за последние 7 дней">
+    </figure>
+    <figure class="chart">
+      <figcaption>30 дней</figcaption>
+      <img class="chart-img" data-mode="30d" src="/admin/chart/30d?v={{ bust }}{% if chart_demo %}&amp;demo=1{% endif %}" alt="График измерений за последние 30 дней">
+    </figure>
+    <figure class="chart">
+      <figcaption>Точка росы</figcaption>
+      <img class="chart-img" data-mode="dew" src="/admin/chart/dew?v={{ bust }}{% if chart_demo %}&amp;demo=1{% endif %}" alt="График точки росы">
+    </figure>
+    <figure class="chart">
+      <figcaption>Сверка с официальной</figcaption>
+      <img class="chart-img" data-mode="ref" src="/admin/chart/ref?v={{ bust }}{% if chart_demo %}&amp;demo=1{% endif %}" alt="Сравнение температуры станции с официальной (Open-Meteo)">
+    </figure>
+  </div>
+</section>
+
+<section class="card" id="om-current">
+  <div class="card-head">
+    <h2>Погода рядом — официальные данные</h2>
+    <button type="button" class="btn btn-sm btn-ghost" id="om-fetch">Показать</button>
+  </div>
+  <div id="om-body">
+    <p class="hint">Нажми «Показать» — подтянем текущую погоду от Open-Meteo для Солигорска (кэш 10 минут).</p>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Телеметрия станции</h2>
+    {% if esp_tel_age is defined and esp_tel_age is not none %}
+    <span class="hint">свежесть: {{ esp_tel_age }} с назад</span>
+    {% else %}
+    <span class="hint">ещё не приходила</span>
+    {% endif %}
+  </div>
+  <div class="om-grid">
+    <div class="om-k">RSSI Wi-Fi</div>
+    <div class="om-v mono">{% if esp_tel is defined and esp_tel.rssi is not none %}{{ esp_tel.rssi }} dBm{% else %}—{% endif %}</div>
+    <div class="om-k">Свободное ОЗУ ESP</div>
+    <div class="om-v mono">{% if esp_tel is defined and esp_tel.heap is not none %}{{ esp_tel.heap }} B{% else %}—{% endif %}</div>
+    <div class="om-k">Аптайм ESP</div>
+    <div class="om-v mono">{% if esp_tel is defined and esp_tel.up_s is not none %}{{ esp_tel.up_s }} с{% else %}—{% endif %}</div>
+    <div class="om-k">Прошивка</div>
+    <div class="om-v mono">{% if esp_tel is defined and esp_tel.fw %}v{{ esp_tel.fw }}{% else %}—{% endif %}</div>
+  </div>
+  <p class="hint">Приходит с каждым /update станции (раз в 5 минут).</p>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Быстрые действия</h2></div>
+  <div class="quick-actions">
+    <a class="btn btn-ghost" href="/admin/users#broadcast"><svg class="icon" aria-hidden="true"><use href="#i-send"/></svg>Рассылка пользователям</a>
+    <a class="btn btn-ghost" href="/admin/data#insert"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Добавить запись вручную</a>
+    <a class="btn btn-ghost" href="/admin/backups"><svg class="icon" aria-hidden="true"><use href="#i-box"/></svg>Создать бэкап</a>
+  </div>
+</section>
+{% endblock %}

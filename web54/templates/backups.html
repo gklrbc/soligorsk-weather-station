@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Бэкапы · Солигорск{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Бэкапы</h1>
+    <p class="page-sub">Копии базы данных · всего: {{ items|length }}{% if items %} · {{ '%.2f'|format(items|sum(attribute='size_mb')) }} МБ{% endif %}</p>
+  </div>
+  <div class="page-actions">
+    <form method="post" action="/admin/backup/create" class="inline-form" data-confirm="Создать бэкап прямо сейчас?">
+      <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Создать бэкап</button>
+    </form>
+  </div>
+</div>
+
+{% if items %}
+<section class="card">
+  <div class="table-controls">
+    <div class="table-tools">
+      <span class="search-wrap">
+        <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+        <input type="search" class="filter-input" data-filter-for="backups-tbody" placeholder="Поиск по имени файла…" aria-label="Фильтр по подстроке">
+      </span>
+      <span class="filter-count" data-filter-count="backups-tbody"></span>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table class="table sortable">
+      <thead>
+        <tr>
+          <th scope="col" data-sort="text">Файл</th>
+          <th scope="col" data-sort="num" class="num">Размер</th>
+          <th scope="col" data-sort="text">Создан</th>
+          <th scope="col" class="th-actions"><span class="visually-hidden">Действия</span></th>
+        </tr>
+      </thead>
+      <tbody id="backups-tbody">
+        {% for it in items %}
+        <tr>
+          <td class="mono">{{ it.name }}</td>
+          <td class="num mono">{{ '%.2f'|format(it.size_mb) }} МБ</td>
+          <td class="mono">{{ it.mtime }}</td>
+          <td class="td-actions no-filter">
+            <a class="btn btn-sm btn-ghost" href="/admin/backups/download/{{ it.name|urlencode }}" title="Скачать {{ it.name }}"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg><span class="btn-label">Скачать</span></a>
+          </td>
+        </tr>
+        {% endfor %}
+        <tr class="filter-empty" hidden><td colspan="4" class="empty-cell">Ничего не найдено.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+{% else %}
+<section class="card empty">
+  <svg class="icon icon-big" aria-hidden="true"><use href="#i-box"/></svg>
+  <h2>Бэкапов пока нет</h2>
+  <p>Создайте первую копию базы данных — она появится в этом списке.</p>
+  <form method="post" action="/admin/backup/create" class="inline-form" data-confirm="Создать бэкап прямо сейчас?">
+    <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Создать бэкап</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

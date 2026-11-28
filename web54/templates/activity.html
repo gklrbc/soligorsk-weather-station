@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Активность{% endblock %}
+{% block content %}
+<div class="activity-stage" id="activity-stage">
+    <div class="activity-canvas" id="activity-canvas"></div>
+
+    <header class="hud hud-title">
+        <div class="hud-over">Солигорск · метеостанция</div>
+        <h1 class="hud-h1">Созвездие активности</h1>
+        <div class="hud-stats">
+            <span><b id="stat-users">0</b>&nbsp;<span id="stat-users-word">пользователей</span></span>
+            <span class="stat-sep"></span>
+            <span><b id="stat-events">0</b>&nbsp;<span id="stat-events-word">событий</span>&nbsp;за 24 ч</span>
+        </div>
+        <div class="hud-stream"><i class="dot" id="stream-dot"></i><span id="stream-label">подключение…</span></div>
+    </header>
+
+    <nav class="hud hud-modes" aria-label="Раскладка созвездия">
+        <div class="mode-switch">
+            <button type="button" data-mode="orbits" aria-pressed="false">Орбиты</button>
+            <button type="button" data-mode="sphere" aria-pressed="false">Сфера</button>
+            <button type="button" data-mode="spiral" aria-pressed="false">Спираль</button>
+            <button type="button" data-mode="galaxy" aria-pressed="false">Галактики</button>
+        </div>
+    </nav>
+
+    <div class="hud hud-legend">
+        <span class="legend-item"><i class="sw sw-live"></i>активный</span>
+        <span class="legend-item"><i class="sw sw-blocked"></i>заблокирован</span>
+        <span class="legend-item"><i class="sw sw-pulse"></i>сообщение</span>
+    </div>
+
+    <div class="hud hud-actions">
+        <button type="button" class="icon-btn" id="view-reset" title="Сбросить вид" aria-label="Сбросить вид">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 12a8 8 0 1 1-2.9-6.16"></path>
+                <path d="M20 4v4.3h-4.3"></path>
+            </svg>
+        </button>
+    </div>
+
+    <div class="hud hud-hint">
+        <span class="hint-desktop">Тяните — вращение · колесо — масштаб · двойной клик — сброс</span>
+        <span class="hint-touch">Палец — вращение · щипок — масштаб · касание узла — детали</span>
+    </div>
+
+    <div class="activity-tooltip" id="activity-tooltip" hidden></div>
+
+    <div class="activity-overlay is-loading" id="activity-overlay">
+        <div class="overlay-inner">
+            <div class="overlay-spinner" aria-hidden="true"></div>
+            <p id="activity-overlay-text">Приём телеметрии…</p>
+        </div>
+    </div>
+</div>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='activity.css') }}">
+<script src="{{ url_for('static', filename='vendor/three.min.js') }}"></script>
+<script src="{{ url_for('static', filename='activity3d.js') }}"></script>
+{% endblock %}

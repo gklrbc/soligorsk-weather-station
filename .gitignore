@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Секреты прошивки — в репозитории только .example
+firmware/secrets.h
+firmware/include/secrets.h
+
+# Локальные секреты бота
+bot/secrets_local.py
+
+# Рабочие документы агентов и материалы — в репо не светим
+AGENTS.md
+WORKSTATE.md
+DESIGN.md
+docs/
+
+# Логи
+logs/
+*.log
+
+# Базы данных и их бэкапы — живут на бортовом компьютере, в git не тянем
+data/*.db
+data/*.db-shm
+data/*.db-wal
+*.sqlite3
+
+# PlatformIO
+firmware/.pio/
+firmware/.pioenvs/
+firmware/.piolibdeps/
+firmware/.vscode/
+firmware/.clang_complete
+firmware/.gcc-flags.json
+
+# ОС
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Служебное агента и одноразовые отладочные скрипты
+.opencode/
+_dbg.py
+pio_*.txt
+
+# Готовые модели для печати: исходники — cad/, срезы и меши в репо не нужны
+stl/
+cad/

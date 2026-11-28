@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Вход · Солигорск{% endblock %}
+{% block body %}
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-logo"><svg class="icon" aria-hidden="true"><use href="#i-logo"/></svg></div>
+    <h1>Солигорск</h1>
+    <p class="login-sub">Админка домашней метеостанции</p>
+    <form method="post" action="/admin" class="login-form">
+      <label for="password">Пароль</label>
+      <div class="password-wrap">
+        <input type="password" id="password" name="password" autocomplete="current-password" required autofocus placeholder="••••••••">
+        <button type="button" class="pw-toggle" data-toggle-password aria-label="Показать пароль">
+          <svg class="icon eye-on" aria-hidden="true"><use href="#i-eye"/></svg>
+          <svg class="icon eye-off" aria-hidden="true"><use href="#i-eye-off"/></svg>
+        </button>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Войти</button>
+    </form>
+    <p class="login-foot">Локальная сеть · без выхода в интернет</p>
+  </div>
+</div>
+{% endblock %}

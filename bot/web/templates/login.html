@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Вход — Метеостанция «Солигорск»</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23161d27'/><path d='M22 21h-9a5.5 5.5 0 1 1 1.1-10.9A6.5 6.5 0 0 1 22 13.5 3.75 3.75 0 0 1 22 21Z' fill='none' stroke='%2334d399' stroke-width='1.8'/><path d='M12 24.5v1M16 24.5v1M20 24.5v1' stroke='%2334d399' stroke-width='1.8' stroke-linecap='round'/></svg>">
+    <style>
+        svg.icon { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="login-body">
+    <div class="loginbox">
+        <div class="login-icon">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="M8 21.5v.5M12 21.5v.5M16 21.5v.5"/></svg>
+        </div>
+        <h1>Веб-админка</h1>
+        <p class="login-sub">Метеостанция «Солигорск» · TestV3</p>
+        <form method="post">
+            <div class="field">
+                <label class="field-label" for="password">Пароль администратора</label>
+                <input type="password" id="password" name="password" placeholder="••••••" autofocus required>
+            </div>
+            <button type="submit" class="full">Войти</button>
+        </form>
+        <p class="login-hint">Сессия действует 12 часов</p>
+    </div>
+</body>
+</html>

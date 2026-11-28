@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Данные{% endblock %}
+{% block content %}
+<header class="page-head">
+    <div>
+        <h1>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+            Данные
+        </h1>
+        <p class="sub">Последние 200 записей · время UTC+3 · красным помечен брак умершего датчика</p>
+    </div>
+    <div class="searchbox">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" placeholder="Поиск по записям" data-filter="#data-table" aria-label="Поиск по записям">
+    </div>
+</header>
+
+<h2>Ручной ввод</h2>
+<form method="post" action="/admin/data/insert" class="insert-form">
+    <input type="text" name="t" placeholder="Температура, °C (−60…55)" required aria-label="Температура">
+    <input type="text" name="h" placeholder="Влажность, % (0…100)" required aria-label="Влажность">
+    <input type="text" name="p" placeholder="Давление, мм (300…1100)" required aria-label="Давление">
+    <button type="submit">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+        Добавить
+    </button>
+</form>
+
+<h2>Записи</h2>
+<div class="table-wrap">
+<table id="data-table">
+    <tr><th class="num">#</th><th>Время</th><th class="num">Температура</th><th class="num">Влажность</th><th class="num">Давление</th><th>Статус</th><th></th></tr>
+    {% for r in records %}
+    <tr{% if r.bad %} class="blocked"{% endif %}>
+        <td class="mono num">{{ r.id }}</td>
+        <td>{{ r.ts }}</td>
+        <td class="num">{{ r.t }}</td>
+        <td class="num">{{ r.h }}</td>
+        <td class="num">{{ r.p }}</td>
+        <td>
+            {% if r.bad %}<span class="badge bad">брак</span>{% else %}<span class="badge dim">норм</span>{% endif %}
+        </td>
+        <td>
+            <form class="inline" method="post" action="/admin/data/delete">
+                <input type="hidden" name="id" value="{{ r.id }}">
+                <button class="danger icon-only" data-confirm="Удалить запись #{{ r.id }}?" aria-label="Удалить запись {{ r.id }}">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+{% endblock %}

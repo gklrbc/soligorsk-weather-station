@@ -1,0 +1,219 @@
+/* Страница «Активность»: портал-иллюминатор со сценой и HUD.
+   Стили изолированы классом .activity-stage — общий style.css не затрагивается. */
+
+.activity-stage {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 150px);
+    min-height: 430px;
+    margin: 12px 0;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #04070a;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+    font-family: "Golos Text", "Segoe UI", -apple-system, sans-serif;
+    color: #e8f3ee;
+}
+
+/* Мягкие скримы сверху и снизу — чтобы HUD читался поверх ярких звёзд */
+.activity-stage::before,
+.activity-stage::after {
+    content: "";
+    position: absolute; left: 0; right: 0; height: 130px;
+    pointer-events: none; z-index: 2;
+}
+.activity-stage::before { top: 0;    background: linear-gradient(180deg, rgba(4, 7, 10, 0.55), rgba(4, 7, 10, 0)); }
+.activity-stage::after  { bottom: 0; background: linear-gradient(0deg,   rgba(4, 7, 10, 0.5),  rgba(4, 7, 10, 0)); }
+
+.activity-canvas { position: absolute; inset: 0; }
+.activity-canvas canvas { display: block; cursor: grab; }
+
+/* ---------- HUD ---------- */
+.hud { position: absolute; z-index: 3; }
+
+.hud-title {
+    top: 16px; left: 18px;
+    max-width: min(460px, calc(100% - 36px));
+    pointer-events: none;
+    text-shadow: 0 1px 18px rgba(0, 0, 0, 0.8), 0 0 2px rgba(0, 0, 0, 0.6);
+}
+.hud-over {
+    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: rgba(232, 243, 238, 0.55);
+}
+.hud-h1 {
+    margin: 3px 0 7px; font-size: 22px; font-weight: 600; letter-spacing: 0.01em;
+    color: #f4fbf8;
+}
+.hud-stats {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: rgba(232, 243, 238, 0.78);
+}
+.hud-stats b {
+    color: #ffd9a4; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.hud-stats b.flash { animation: stat-flash 0.9s ease-out; }
+@keyframes stat-flash {
+    0%   { color: #ffffff; text-shadow: 0 0 16px rgba(255, 190, 110, 0.95); }
+    100% { color: #ffd9a4; text-shadow: none; }
+}
+.stat-sep { width: 1px; height: 12px; background: rgba(232, 243, 238, 0.25); }
+
+.hud-stream {
+    display: flex; align-items: center; gap: 7px; margin-top: 9px;
+    font-size: 12px; color: rgba(232, 243, 238, 0.7);
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #8a9490; flex: none; }
+.dot-live {
+    background: #7fe7c1; box-shadow: 0 0 9px rgba(127, 231, 193, 0.95);
+    animation: dot-breathe 2.4s ease-in-out infinite;
+}
+.dot-off { background: #e05252; animation: dot-blink 1.1s steps(2, start) infinite; }
+@keyframes dot-breathe { 50% { opacity: 0.5; } }
+@keyframes dot-blink   { 50% { opacity: 0.2; } }
+
+/* Переключатель режимов */
+.hud-modes { top: 18px; right: 18px; }
+.mode-switch {
+    display: flex; gap: 3px; padding: 4px; border-radius: 13px;
+    background: rgba(6, 10, 14, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.mode-switch button {
+    appearance: none; border: 0; background: transparent;
+    color: rgba(232, 243, 238, 0.72);
+    font: 500 13px/1 "Golos Text", "Segoe UI", sans-serif;
+    padding: 9px 12px; border-radius: 9px; cursor: pointer;
+    transition: color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+.mode-switch button:hover { color: #ffffff; }
+.mode-switch button:focus-visible { outline: 1px solid rgba(255, 169, 88, 0.7); outline-offset: 1px; }
+.mode-switch button.active {
+    color: #ffd9a4;
+    background: rgba(255, 169, 88, 0.16);
+    box-shadow: inset 0 0 0 1px rgba(255, 169, 88, 0.38), 0 0 18px rgba(255, 169, 88, 0.12);
+}
+
+/* Легенда, действия, подсказка */
+.hud-legend {
+    left: 18px; bottom: 16px;
+    display: flex; flex-wrap: wrap; gap: 14px;
+    padding: 8px 13px; border-radius: 12px;
+    background: rgba(6, 10, 14, 0.58);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    font-size: 12px; color: rgba(232, 243, 238, 0.78);
+}
+.legend-item { display: flex; align-items: center; gap: 7px; }
+.sw { width: 9px; height: 9px; display: inline-block; flex: none; }
+.sw-live    { border-radius: 50%; background: #7fe7c1; box-shadow: 0 0 8px rgba(127, 231, 193, 0.9); }
+.sw-blocked { border-radius: 50%; background: #c95454; opacity: 0.85; }
+.sw-pulse   { background: #ffc16e; border-radius: 50% 0 50% 50%; transform: rotate(-45deg);
+              box-shadow: 0 0 8px rgba(255, 193, 110, 0.9); }
+
+.hud-actions { right: 18px; bottom: 16px; }
+.icon-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(6, 10, 14, 0.6);
+    color: rgba(232, 243, 238, 0.85); cursor: pointer;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: color 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+}
+.icon-btn:active { transform: scale(0.94); }
+.icon-btn:hover { color: #ffd9a4; border-color: rgba(255, 169, 88, 0.45); }
+.icon-btn:focus-visible { outline: 1px solid rgba(255, 169, 88, 0.7); outline-offset: 1px; }
+.icon-btn svg { width: 19px; height: 19px; }
+
+.hud-hint {
+    left: 50%; bottom: 20px; transform: translateX(-50%);
+    font-size: 12px; color: rgba(232, 243, 238, 0.5);
+    pointer-events: none; white-space: nowrap;
+    text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8);
+}
+.hint-touch { display: none; }
+@media (hover: none) and (pointer: coarse) {
+    .hint-desktop { display: none; }
+    .hint-touch { display: inline; }
+}
+
+/* ---------- Тултип узла ---------- */
+.activity-tooltip {
+    position: absolute; z-index: 5; top: 0; left: 0;
+    min-width: 200px; max-width: 260px;
+    padding: 11px 13px; border-radius: 13px;
+    background: rgba(7, 12, 16, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+}
+.activity-tooltip[hidden] { display: none; }
+.tip-head { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+.tip-name { font-weight: 600; font-size: 14px; color: #f2fbf7; }
+.tip-badge {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: #ffb1b1; border: 1px solid rgba(224, 82, 82, 0.5);
+    border-radius: 6px; padding: 2px 6px; white-space: nowrap;
+}
+.tip-sub { font-size: 11px; color: rgba(232, 243, 238, 0.55); margin-bottom: 8px; }
+.tip-row {
+    display: flex; justify-content: space-between; gap: 14px;
+    font-size: 12px; color: rgba(232, 243, 238, 0.75); padding: 2px 0;
+}
+.tip-row b { color: #ffd9a4; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tip-cap {
+    margin-top: 9px; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: rgba(232, 243, 238, 0.45);
+}
+.tip-chart { display: block; width: 224px; height: 44px; margin-top: 5px; }
+
+/* ---------- Оверлей: загрузка / пустое состояние ---------- */
+.activity-overlay {
+    position: absolute; inset: 0; z-index: 4;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(4, 7, 10, 0.6);
+}
+.activity-overlay[hidden] { display: none; }
+.overlay-inner {
+    text-align: center; max-width: 330px; padding: 0 20px;
+    color: rgba(232, 243, 238, 0.82); font-size: 14px; line-height: 1.55;
+    text-shadow: 0 1px 12px rgba(0, 0, 0, 0.8);
+}
+.overlay-inner p { margin: 0; }
+.overlay-spinner {
+    width: 26px; height: 26px; margin: 0 auto 14px; border-radius: 50%;
+    border: 2px solid rgba(255, 193, 110, 0.25); border-top-color: #ffc16e;
+    animation: overlay-spin 0.9s linear infinite;
+}
+.activity-overlay:not(.is-loading) .overlay-spinner { display: none; }
+@keyframes overlay-spin { to { transform: rotate(360deg); } }
+
+/* ---------- Мобильная раскладка (~390 px) ---------- */
+@media (max-width: 640px) {
+    .activity-stage { height: calc(100vh - 110px); min-height: 360px; border-radius: 14px; }
+    .hud-title { top: 13px; left: 12px; right: 12px; }
+    .hud-h1 { font-size: 18px; }
+    .hud-stats { font-size: 12px; gap: 8px; flex-wrap: wrap; }
+    .hud-modes {
+        top: auto; right: auto; left: 50%; bottom: 68px;
+        transform: translateX(-50%);
+    }
+    .mode-switch button { padding: 8px 9px; font-size: 11.5px; }
+    .hud-legend {
+        left: 12px; right: 64px; bottom: 12px; gap: 10px;
+        font-size: 11px; padding: 7px 10px;
+    }
+    .hud-actions { right: 12px; bottom: 12px; }
+    .hud-hint { display: none; }
+    .tip-chart { width: 200px; }
+    .activity-tooltip { min-width: 180px; }
+}

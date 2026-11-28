@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Пользователи · Солигорск{% endblock %}
+{% block content %}
+{% set blocked_n = users|selectattr('blocked', 'equalto', 1)|list|length %}
+<div class="page-head">
+  <div>
+    <h1>Пользователи</h1>
+    <p class="page-sub">Всего: {{ users|length }} · заблокировано: {{ blocked_n }} · имя появляется после первого сообщения боту</p>
+  </div>
+</div>
+
+<section class="card" id="broadcast">
+  <div class="card-head">
+    <h2><svg class="icon" aria-hidden="true"><use href="#i-send"/></svg>Рассылка</h2>
+    {% if test_mode %}<span class="badge badge-warn">тест-режим — реально не уйдёт</span>{% endif %}
+  </div>
+  <form method="post" action="/admin/broadcast" data-confirm="Отправить рассылку всем пользователям бота? Отменить отправку будет нельзя.">
+    <textarea id="broadcast-text" name="text" rows="3" maxlength="4000" required placeholder="Текст сообщения для всех пользователей…"></textarea>
+    <div class="form-foot">
+      <span class="char-counter" id="broadcast-counter" data-char-for="broadcast-text">0 / 4000</span>
+      <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-send"/></svg>Отправить всем</button>
+    </div>
+  </form>
+  <p class="hint">Рассылка уходит только неблокированным пользователям; текст длиннее 4000 символов обрезается.</p>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Список пользователей</h2>
+    <span class="hint">отсортировано по последней активности</span>
+  </div>
+  <div class="table-controls">
+    <div class="chips" data-chips-for="users-tbody" role="group" aria-label="Фильтр по статусу">
+      <button type="button" class="fchip active" data-cat="all">Все</button>
+      <button type="button" class="fchip" data-cat="active">Активные</button>
+      <button type="button" class="fchip" data-cat="blocked">Заблокированные</button>
+    </div>
+    <div class="table-tools">
+      <span class="search-wrap">
+        <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+        <input type="search" class="filter-input" data-filter-for="users-tbody" placeholder="Поиск: имя, @username, ID…" aria-label="Фильтр по подстроке">
+      </span>
+      <span class="filter-count" data-filter-count="users-tbody"></span>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table class="table sortable" id="users-table">
+      <thead>
+        <tr>
+          <th scope="col" data-sort="text">Пользователь</th>
+          <th scope="col" data-sort="text">Активность</th>
+          <th scope="col">Статус</th>
+          <th scope="col" class="th-actions">Действия</th>
+        </tr>
+      </thead>
+      <tbody id="users-tbody">
+        {% for u in users %}
+        <tr data-cat="{{ 'blocked' if u.blocked else 'active' }}">
+          <td class="cell-user">
+            <span class="avatar" aria-hidden="true">{{ (u.name[:1]|upper) if u.name else '#' }}</span>
+            <span class="user-meta">
+              <span class="user-name">{{ u.name if u.name else 'Без имени' }}</span>
+              <span class="user-tag mono">{% if u.username %}<a href="https://t.me/{{ u.username }}" target="_blank" rel="noopener">@{{ u.username }}</a>{% else %}—{% endif %} · ID {{ u.uid }}</span>
+            </span>
+          </td>
+          <td class="mono{% if u.act == '—' %} dash{% endif %}">{{ u.act }}</td>
+          <td>{% if u.blocked %}<span class="badge badge-danger">заблокирован</span>{% else %}<span class="badge badge-ok">активен</span>{% endif %}</td>
+          <td class="td-actions no-filter">
+            <button type="button" class="btn btn-sm btn-icon btn-ghost" data-copy="{{ u.uid }}" title="Скопировать ID {{ u.uid }}" aria-label="Скопировать ID">
+              <svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg>
+            </button>
+            {% if u.blocked %}
+            <form method="post" action="/admin/users/unblock" class="inline-form">
+              <input type="hidden" name="user_id" value="{{ u.uid }}">
+              <button type="submit" class="btn btn-sm btn-ghost" title="Разблокировать {{ u.uid }}"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span class="btn-label">Разблокировать</span></button>
+            </form>
+            {% else %}
+            <form method="post" action="/admin/users/block" class="inline-form" data-confirm="Заблокировать пользователя {{ u.uid }}? Бот перестанет ему отвечать (любые команды — молча) и исключит его из рассылок.">
+              <input type="hidden" name="user_id" value="{{ u.uid }}">
+              <button type="submit" class="btn btn-sm btn-danger-ghost" title="Заблокировать {{ u.uid }}"><svg class="icon" aria-hidden="true"><use href="#i-ban"/></svg><span class="btn-label">Заблокировать</span></button>
+            </form>
+            {% endif %}
+            <form method="post" action="/admin/users/delete" class="inline-form" data-confirm="Удалить пользователя {{ u.uid }} из базы? Он снова появится, если напишет боту.">
+              <input type="hidden" name="user_id" value="{{ u.uid }}">
+              <button type="submit" class="btn btn-sm btn-icon btn-ghost btn-del" title="Удалить {{ u.uid }}" aria-label="Удалить пользователя">
+                <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr class="empty-row"><td colspan="4">Пользователей пока нет.</td></tr>
+        {% endfor %}
+        <tr class="filter-empty" hidden><td colspan="4" class="empty-cell">Ничего не найдено — измените поиск или фильтр.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

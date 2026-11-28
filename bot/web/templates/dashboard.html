@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Дашборд{% endblock %}
+{% block content %}
+<header class="page-head">
+    <div>
+        <h1>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+            Дашборд
+        </h1>
+        <p class="sub">Бот запущен {{ bot_started }} · база {{ '%.1f'|format(db_size_mb) }} MB</p>
+    </div>
+    <div class="head-actions">
+        <a class="btn ghost" href="/admin/export/csv">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+            CSV
+        </a>
+        <a class="btn ghost" href="/admin/export/xlsx">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9 13 6 4m0-4-6 4"/></svg>
+            Excel
+        </a>
+    </div>
+</header>
+
+<div class="note">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/></svg>
+    HTTP без шифрования — только локальная сеть; наружу — через reverse-proxy с TLS.
+</div>
+
+<div class="cards">
+    <div class="metric">
+        <div class="metric-k">Станция</div>
+        <div class="metric-v">
+            {% if station_online %}<span class="badge ok">онлайн</span>
+            {% else %}<span class="badge bad">молчит</span>{% endif %}
+        </div>
+        <div class="metric-n">последний замер {{ last_ts }} UTC+3</div>
+    </div>
+    <div class="metric">
+        <div class="metric-k">Записей всего</div>
+        <div class="metric-v">{{ total }}</div>
+        <div class="metric-n">за 24 ч — {{ sensor_24h }}</div>
+    </div>
+    <div class="metric">
+        <div class="metric-k">Пользователи</div>
+        <div class="metric-v">{{ users_total }}</div>
+        <div class="metric-n">активны за час — {{ active_1h }} · блок — {{ users_blocked }}</div>
+    </div>
+    <div class="metric">
+        <div class="metric-k">Отказы /update</div>
+        <div class="metric-v">{{ rejects_24h }}</div>
+        <div class="metric-n">за 24 ч — мусор или неверный ключ</div>
+    </div>
+</div>
+
+<h2>Сводка по периодам</h2>
+<div class="table-wrap">
+<table>
+    <tr><th>Период</th><th class="num">Минимум</th><th class="num">Максимум</th><th class="num">Средняя</th><th class="num">Записей</th></tr>
+    {% for label, s in [('24 часа', s24), ('7 дней', s7), ('30 дней', s30)] %}
+    <tr>
+        <td>{{ label }}</td>
+        <td class="num">{% if s[0] is not none %}{{ '%.1f'|format(s[0]) }} °C{% else %}—{% endif %}</td>
+        <td class="num">{% if s[1] is not none %}{{ '%.1f'|format(s[1]) }} °C{% else %}—{% endif %}</td>
+        <td class="num">{% if s[2] is not none %}{{ '%.1f'|format(s[2]) }} °C{% else %}—{% endif %}</td>
+        <td class="num">{{ s[3] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+
+<h2>Графики <span class="hint">автообновление — 60 с</span>
+    <span class="hint h2-actions">
+        {% if chart_demo %}
+            <a class="btn ghost" href="/admin">← вернуть данные станции</a>
+        {% else %}
+            <a class="btn ghost" href="/admin?demo=1">Тестовые графики</a>
+        {% endif %}
+    </span>
+</h2>
+{% if chart_demo %}
+<div class="note">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/></svg>
+    Показаны синтетические данные для проверки графиков — к базе отношения не имеют.
+</div>
+{% endif %}
+<div class="charts-grid">
+    <img class="chart" data-autorefresh src="/admin/chart/24h?v={{ bust }}{{ '&demo=1' if chart_demo }}" alt="Температура за 24 ч (пунктиром — влажность)" loading="lazy">
+    <img class="chart" data-autorefresh src="/admin/chart/7d?v={{ bust }}{{ '&demo=1' if chart_demo }}" alt="Динамика недели" loading="lazy">
+    <img class="chart" data-autorefresh src="/admin/chart/30d?v={{ bust }}{{ '&demo=1' if chart_demo }}" alt="Динамика месяца" loading="lazy">
+    <img class="chart" data-autorefresh src="/admin/chart/dew?v={{ bust }}{{ '&demo=1' if chart_demo }}" alt="Точка росы за неделю" loading="lazy">
+</div>
+{% endblock %}
